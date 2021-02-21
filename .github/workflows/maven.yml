@@ -1,0 +1,28 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ 16-ea ]
+    name: Java ${{ matrix.java }} sample
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+      - name: install
+        run: |
+          mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+      - name: build
+        run: |
+          mvn -B package
+          
