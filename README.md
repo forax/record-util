@@ -7,7 +7,7 @@ Some utility classes around java records
   
   Transform any record to a `java.util.Map` just by implementing the interface `MapTrait`
   ```java
-    record Person(String name, int age) implements MapTrait { }
+    record Person(String name, int age) implements MapTrait {}
     ...
     Map<String, Object> map = new Person("Bob", 42);
   ```
