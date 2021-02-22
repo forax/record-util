@@ -19,7 +19,7 @@ import java.util.function.Function;
  * An interface that provides an implementation for all methods of an unmodifiable {@link Map}
  * if the class that implements that interface is a {@link Record record}.
  *
- * Implementing this interface transform any records to a {@link Map}.
+ * Adding this interface transforms any records to a {@link Map}.
  * <pre>
  *   record Person(String name, int age) implements MapTrait { }
  *   ...
@@ -49,6 +49,20 @@ import java.util.function.Function;
  *   }
  * </pre>
  *
+ * <p>
+ * All methods may throw an error {@link IllegalAccessError} if the record is declared
+ * in a package in a module which does not open the package to the module
+ * {@code com.github.forax.recordutil}.
+ * By example, if the record is declared in a module mymodule in a package mypackage,
+ * the module-info of this module should contains the following delcaration
+ * <pre>
+ *   module mymodule {
+ *     ...
+ *     open mypackage to com.github.forax.recordutil;
+ *   }
+ * </pre>
+ *
+ * <p>
  * This implementation guarantee that the methods {@link #entrySet()}, {@link #keySet()}, {@link #keys()}
  * and {@link #values()} provide the keys and values in the record components order.
  *
