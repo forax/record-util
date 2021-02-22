@@ -10,6 +10,19 @@ import java.util.Arrays;
 import static java.lang.invoke.MethodType.methodType;
 
 class TraitImpl {
+
+  /**
+   * Combine a hash table ({@code table}) that stores a pair String/MethodHandle with
+   * a list {@code vec} that stores the same pair.
+   *
+   * <ol>
+   *  <li>to insert a pair uses {@link #put(int, String, MethodHandle)}
+   *  <li>to know the number of pairs uses {@link #size()}
+   *  <li>to get the value from a key uses {@link #getValue(String)}
+   *  <li>to get the key from an index uses {@link #getKey(int)}
+   *  <li>to get the value from an index uses {@link #getValue(int)}
+   * </ol>
+   */
   record MapShape(Object[] table, Object[] vec) {
     MapShape(int capacity) {
       this(new Object[capacity == 0? 2: Integer.highestOneBit(capacity) << 2], new Object[capacity << 1]);
@@ -122,11 +135,31 @@ class TraitImpl {
     }
   }
 
+  /**
+   * Returns a hash/list describing the associating between a record component
+   * name and its corresponding getter as a method handle.
+   *
+   * @param type the class of the record
+   * @return the hash/list describing the record
+   */
   static MapShape mapShape(Class<?> type) {
     return SHAPE_MAP.get(type);
   }
 
 
+  /**
+   * Combine a hash table ({@code table}) that stores an index ({@code slot}) for
+   * a String and a list that stores at the index ({@code slot})
+   * the corresponding MethodHandle.
+   * It also stores the constructor as a method handle.
+   *
+   * <ol>
+   *  <li>to insert a pair uses {@link #put(int, String, MethodHandle)}
+   *  <li>to know the number of key/value uses {@link #size()}
+   *  <li>to get the slot (index) from a key uses {@link #getSlot(String)}
+   *  <li>to get the value from a slot (index) uses {@link #getValue(int)}
+   * </ol>
+   */
   record WithShape(Object[] table, MethodHandle[] vec, MethodHandle constructor) {
     WithShape(int capacity, MethodHandle constructor) {
       this(new Object[capacity == 0? 2: Integer.highestOneBit(capacity) << 2], new MethodHandle[capacity], constructor);
@@ -211,6 +244,14 @@ class TraitImpl {
     }
   }
 
+  /**
+   * Returns a hash/list describing the associating between a record component
+   * name and its corresponding getter as a method handle and
+   * the constructor.
+   *
+   * @param type the class of the record
+   * @return the hash/list describing the record
+   */
   static WithShape withShape(Class<?> type) {
     return WITH_SHAPE_MAP.get(type);
   }
