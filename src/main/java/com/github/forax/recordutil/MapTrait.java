@@ -54,7 +54,7 @@ import java.util.function.Function;
  * in a package in a module which does not open the package to the module
  * {@code com.github.forax.recordutil}.
  * By example, if the record is declared in a module mymodule in a package mypackage,
- * the module-info of this module should contains the following delcaration
+ * the module-info of this module should contains the following declaration
  * <pre>
  *   module mymodule {
  *     ...
