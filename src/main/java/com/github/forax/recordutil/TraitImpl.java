@@ -95,6 +95,10 @@ class TraitImpl {
   };
 
   private static Lookup teleport(Class<?> type, Lookup localLookup) {
+    // add read access to the type module
+    localLookup.lookupClass().getModule().addReads(type.getModule());
+
+    // then teleport
     try {
       return MethodHandles.privateLookupIn(type, localLookup);
     } catch (IllegalAccessException e) {
