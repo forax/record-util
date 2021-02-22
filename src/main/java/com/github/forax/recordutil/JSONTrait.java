@@ -9,7 +9,7 @@ import java.lang.reflect.UndeclaredThrowableException;
  *
  * Adding this interface add a method {@link #toJSON()}
  * <pre>
- *   record Person(String name, int age) implements MapTrait { }
+ *   record Person(String name, int age) implements JSONTrait { }
  *   ...
  *   var person = new Person("Bob", 42);
  *   System.out.println(person.toJSON());

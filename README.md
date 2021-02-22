@@ -35,6 +35,16 @@ Some utility classes around java records
   var ana = wither.with(bob, "name", "Ana");
   ```
 
+- JSONTrait
+
+  Implementing the interface `JSONTrait` adds a method `toJSON` that
+  enable to output a record instance to the JSON format
+  ```java
+  record Person(String name, int age) implements JSONTrait { }
+  ...
+  var person = new Person("Bob", 42);
+  System.out.println(person.toJSON());
+  ```
 
 ### How to build
 ```
