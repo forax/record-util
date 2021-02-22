@@ -46,7 +46,7 @@ public interface WithTrait<R> {
     var array = new Object[shape.size()];
     try {
       for (var i = 0; i < shape.size(); i++) {
-        array[i] = shape.getValue(i).invokeExact(this);
+        array[i] = shape.getValue(i).invokeExact((Object) this);
       }
       return array;
     } catch (RuntimeException | Error e) {

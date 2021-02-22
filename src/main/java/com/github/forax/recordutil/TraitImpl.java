@@ -100,7 +100,7 @@ class TraitImpl {
       var shape = new MapShape(components.length);
       for(var i = 0; i < components.length; i++) {
         var component = components[i];
-        var getter = asMH(lookup, component).asType(methodType(Object.class, MapTrait.class));
+        var getter = asMH(lookup, component).asType(methodType(Object.class, Object.class));
         shape.put(i, component.getName(), getter);
       }
       return shape;
@@ -229,7 +229,7 @@ class TraitImpl {
       var shape = new WithShape(components.length, constructor);
       for(var i = 0; i < components.length; i++) {
         var component = components[i];
-        var getter = asMH(lookup, component).asType(methodType(Object.class, WithTrait.class));
+        var getter = asMH(lookup, component).asType(methodType(Object.class, Object.class));
         shape.put(i, component.getName(), getter);
       }
       return shape;

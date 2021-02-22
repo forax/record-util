@@ -98,7 +98,7 @@ public interface MapTrait extends java.util.Map<String, Object> {
 
   private Object invokeValue(MethodHandle getter) {
     try {
-      return getter.invokeExact(this);
+      return getter.invokeExact((Object) this);
     } catch(RuntimeException | Error e) {
       throw e;
     } catch (Throwable t) {
