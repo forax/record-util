@@ -38,7 +38,7 @@ Some utility classes around java records
 - JSONTrait
 
   Implementing the interface `JSONTrait` adds a method `toJSON` that
-  enable to output a record instance to the JSON format
+  enable to output a record instance using the JSON format
   ```java
   record Person(String name, int age) implements JSONTrait { }
   ...
