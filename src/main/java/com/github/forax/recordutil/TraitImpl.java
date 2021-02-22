@@ -152,7 +152,7 @@ class TraitImpl {
     }
 
     MethodHandle getValue(int index) {
-      return (MethodHandle) vec[index];
+      return vec[index];
     }
 
     private int probe(String key) {
