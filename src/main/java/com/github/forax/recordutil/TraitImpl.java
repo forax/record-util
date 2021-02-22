@@ -102,7 +102,15 @@ class TraitImpl {
     try {
       return MethodHandles.privateLookupIn(type, localLookup);
     } catch (IllegalAccessException e) {
-      throw (IllegalAccessError) new IllegalAccessError().initCause(e);
+      throw (IllegalAccessError) new IllegalAccessError("""
+          the module %s does not open the package %s to the module com.github.forax.recordutil
+          you can add this incantation to the module-info
+            module %s {
+                ...
+                opens %s to com.github.forax.recordutil; 
+            }
+          """.formatted(type.getModule(), type.getPackageName(), type.getModule(), type.getPackageName())
+        ).initCause(e);
     }
   }
 
