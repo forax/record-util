@@ -32,4 +32,4 @@ jobs:
           prerelease: true
           title: "Release SNAPSHOT"
           files: |
-            .target/*.jar
+            target/*.jar
