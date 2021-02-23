@@ -120,7 +120,7 @@ class TraitImpl {
           you can add this incantation to the module-info
             module %s {
                 ...
-                opens %s to com.github.forax.recordutil; 
+                opens %s to com.github.forax.recordutil;
             }
           """.formatted(type.getModule(), type.getPackageName(), type.getModule(), type.getPackageName())
         ).initCause(e);
