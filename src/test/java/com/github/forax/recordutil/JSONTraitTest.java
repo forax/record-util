@@ -2,6 +2,8 @@ package com.github.forax.recordutil;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,7 +34,21 @@ public class JSONTraitTest {
   }
 
   @Test
-  public void toJSONWithPrimitiveType() {
+  public void parseJSON() throws IOException {
+    record Person(String name, int age) {}
+    var person = JSONTrait.parse(new StringReader("""
+        {
+          "name": "Bob",
+          "age": 42
+        }\
+        """), Person.class);
+
+    var expected = new Person("Bob", 42);
+    assertEquals(expected, person);
+  }
+
+  @Test
+  public void toJSONWithPrimitiveTypes() {
     record Foo(boolean b, char c, int i, long l, float f, double d, String s) implements JSONTrait {}
     var foo = new Foo(true, 'f', 2, 3L, 4f, 8.0, null);
 
@@ -42,7 +58,7 @@ public class JSONTraitTest {
   }
 
   @Test
-  public void toHumanReadableJSONWithPrimitiveType() {
+  public void toHumanReadableJSONWithPrimitiveTypes() {
     record Foo(boolean b, char c, int i, long l, float f, double d, String s) implements JSONTrait {}
     var foo = new Foo(true, 'f', 2, 3L, 4f, 8.0, null);
 
@@ -60,6 +76,25 @@ public class JSONTraitTest {
   }
 
   @Test
+  public void parseJSONWithPrimitiveTypes() throws IOException {
+    record Foo(boolean b, char c, int i, long l, float f, double d, String s) {}
+    var person = JSONTrait.parse(new StringReader("""
+        {
+          "b": true,
+          "c": "f",
+          "i": 2,
+          "l": 3,
+          "f": 4.0,
+          "d": 8.0,
+          "s": null
+        }\
+        """), Foo.class);
+
+    var expected = new Foo(true, 'f', 2, 3L, 4f, 8.0, null);
+    assertEquals(expected, person);
+  }
+
+  @Test
   public void toJSONWithUnknownType() {
     record Timestamp(LocalDate date) implements JSONTrait {}
     var timestamp = new Timestamp(LocalDate.of(2000, 1, 1));
@@ -70,7 +105,7 @@ public class JSONTraitTest {
   }
 
   @Test
-  public void toHumanRedableJSONWithUnknownType() {
+  public void toHumanReadableJSONWithUnknownType() {
     record Timestamp(LocalDate date) implements JSONTrait {}
     var timestamp = new Timestamp(LocalDate.of(2000, 1, 1));
 
@@ -79,6 +114,24 @@ public class JSONTraitTest {
           "date": "2000-01-01"
         }\
         """, timestamp.toHumanReadableJSON());
+  }
+
+  @Test
+  public void parseJSONWithUnknownType() throws IOException {
+    record Timestamp(LocalDate date) {}
+    var timestamp = JSONTrait.parse(new StringReader("""
+        {
+          "date": "2000-01-01"
+        }\
+        """), Timestamp.class, (valueAsString, type, downstreamConverter) -> {
+      if (type == LocalDate.class) {
+        return LocalDate.parse(valueAsString);
+      }
+      return downstreamConverter.convert(valueAsString, type);
+    });
+
+    var expected = new Timestamp(LocalDate.of(2000, 1, 1));
+    assertEquals(expected, timestamp);
   }
 
   @Test
@@ -108,5 +161,24 @@ public class JSONTraitTest {
           }
         }\
         """, person.toHumanReadableJSON());
+  }
+
+  @Test
+  public void parseEnclosedJSON() throws IOException {
+    record Address(int number, String street) {}
+    record Person(String name, int age, Address address) implements JSONTrait {}
+    var person = JSONTrait.parse(new StringReader("""
+        {
+          "name": "Bob",
+          "age": 42,
+          "address": {
+            "number": 13,
+            "street": "civic street"
+          }
+        }\
+        """), Person.class);
+
+    var expected = new Person("Bob", 42, new Address(13, "civic street"));
+    assertEquals(expected, person);
   }
 }

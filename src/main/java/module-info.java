@@ -6,5 +6,7 @@
  * @see com.github.forax.recordutil.Wither
  */
 module com.github.forax.recordutil {
+  requires static com.fasterxml.jackson.core;
+
   exports com.github.forax.recordutil;
 }

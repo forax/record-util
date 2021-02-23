@@ -255,4 +255,104 @@ class TraitImpl {
   static WithShape withShape(Class<?> type) {
     return WITH_SHAPE_MAP.get(type);
   }
+
+
+  /**
+   * Combine a hash table ({@code table}) that stores an index ({@code slot}) for
+   * a String and a list that stores at the index ({@code slot})
+   * the corresponding type ({@code Class}).
+   * It also stores the constructor as a method handle.
+   *
+   * <ol>
+   *  <li>to insert a pair uses {@link #put(int, String, Class)}
+   *  <li>to know the number of key/value uses {@link #size()}
+   *  <li>to get the slot (index) from a key uses {@link #getSlot(String)}
+   *  <li>to get the type from a slot (index) uses {@link #getType(int)}
+   * </ol>
+   */
+  record JSONShape(Object[] table, Class<?>[] vec, MethodHandle constructor) {
+    JSONShape(int capacity, MethodHandle constructor) {
+      this(new Object[capacity == 0? 2: Integer.highestOneBit(capacity) << 2], new Class<?>[capacity], constructor);
+    }
+
+    void put(int index, String key, Class<?> type) {
+      var slot = -probe(key) - 1;
+      table[slot] = key;
+      table[slot + 1] = index;
+      vec[index] = type;
+    }
+
+    int getSlot(String key) {
+      var slot = probe(key);
+      if (slot < 0) {
+        return -1;
+      }
+      return (int) table[slot + 1];
+    }
+
+    int size() {
+      return vec.length;
+    }
+
+    Class<?> getType(int index) {
+      return vec[index];
+    }
+
+    private int probe(String key) {
+      var slot = (key.hashCode() & ((table.length >> 1) - 1)) << 1;
+      var k = table[slot];
+      if (k == null) {
+        return -slot - 1;
+      }
+      if (key.equals(k)) {
+        return slot;
+      }
+      return probe2(key, slot);
+    }
+
+    private int probe2(String key, int slot) {
+      for(;;) {
+        slot = (slot + 2) & (table.length - 1);
+        var k = table[slot];
+        if (k == null) {
+          return -slot - 1;
+        }
+        if (key.equals(k)) {
+          return slot;
+        }
+      }
+    }
+  }
+
+  private static final ClassValue<JSONShape> JSON_SHAPE_MAP = new ClassValue<>() {
+    @Override
+    protected JSONShape computeValue(Class<?> type) {
+      var components = type.getRecordComponents();
+      if (components == null) {
+        throw new IllegalStateException(type.getName() + " is not a record");
+      }
+      var lookup = teleport(type, MethodHandles.lookup());
+      var constructor = asConstructor(lookup, type, components)
+          .asType(MethodType.genericMethodType(components.length))
+          .asSpreader(Object[].class, components.length);
+
+      var shape = new JSONShape(components.length, constructor);
+      for(var i = 0; i < components.length; i++) {
+        var component = components[i];
+        shape.put(i, component.getName(), component.getType());
+      }
+      return shape;
+    }
+  };
+
+  /**
+   * Returns a hash/list describing the associating between a record component
+   * name and its corresponding type (@code Class) and the constructor.
+   *
+   * @param type the class of the record
+   * @return the hash/list describing the record
+   */
+  static JSONShape jsonShape(Class<?> type) {
+    return JSON_SHAPE_MAP.get(type);
+  }
 }

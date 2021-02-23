@@ -1,9 +1,15 @@
 package com.github.forax.recordutil;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * An interface that provides a method {@link #toJSON()} for any {@link Record record} that
@@ -16,6 +22,11 @@ import java.util.Map;
  *   var person = new Person("Bob", 42);
  *   System.out.println(person.toJSON());
  * </pre>
+ *
+ * Moreover, JSONTrait defines a method {@link #parse(Reader, Class)} to decode a JSON file
+ * to a record instance. This feature is implemented using Jackson but the dependency is not enabled by default
+ * so to use it you have to add a `requires com.fasterxml.jackson.core;` into your module-info
+ * and also add the dependency to `com.fasterxml.jackson.core:jackson-core` in your POM file
  *
  * <p>
  * All methods may throw an error {@link IllegalAccessError} if the record is declared
@@ -82,10 +93,6 @@ public interface JSONTrait {
       toJSONRecord(builder, record, linePrefix, lineIndent, lineSeparator);
       return;
     }
-    if (o instanceof Map<?,?> map) {
-      toJSONObject(builder, map, linePrefix, lineIndent, lineSeparator);
-      return;
-    }
     if (o instanceof Collection<?> collection) {
       toJSONArray(builder, collection, linePrefix, lineIndent, lineSeparator);
       return;
@@ -105,22 +112,6 @@ public interface JSONTrait {
           .append(lineSeparator).append(innerLinePrefix)
           .append('"').append(key).append("\": ");
       toJSON(builder, invokeValue(record, value), innerLinePrefix, lineIndent, lineSeparator);
-      separator = lineSeparator.isEmpty()? ", ": ",";
-    }
-    builder.append(lineSeparator).append(linePrefix).append('}');
-  }
-
-  private static void toJSONObject(StringBuilder builder, Map<?,?> map, String linePrefix, String lineIndent, String lineSeparator) {
-    builder.append('{');
-    var separator = "";
-    var innerLinePrefix = linePrefix + lineIndent;
-    for(var entry: map.entrySet()) {
-      var key = entry.getKey();
-      var value = entry.getValue();
-      builder.append(separator)
-          .append(lineSeparator).append(innerLinePrefix)
-          .append('"').append(key).append("\": ");
-      toJSON(builder, value, innerLinePrefix, lineIndent, lineSeparator);
       separator = lineSeparator.isEmpty()? ", ": ",";
     }
     builder.append(lineSeparator).append(linePrefix).append('}');
@@ -146,5 +137,86 @@ public interface JSONTrait {
     builder.append('"')
         .append(o.toString().replace("\"", "\\\""))
         .append('"');
+  }
+
+  /**
+   * User defined callback to convert a JSON value typed as a {@code String} to a Java value
+   * of a specific {@code Class}.
+   *
+   * By example, to parse dates using {@link java.time.LocalDate}, one can write
+   * <pre>
+   *   Converter converter = (valueAsString, type, downstreamConverter) -> {
+   *       if (type == LocalDate.class) {
+   *         return LocalDate.parse(valueAsString);
+   *       }
+   *       return downstreamConverter.convert(valueAsString, type);
+   *     };
+   * </pre>
+   * 
+   * @see #parse(Reader, Class, Converter)
+   */
+  @FunctionalInterface
+  interface Converter {
+    /**
+     * Default implementation of a converter that knows how to convert Java primitive types.
+     */
+    interface DownStream {
+      /**
+       * Convert a JSON value encoded as a String to an object of peculiar Java class.
+       *
+       * @param valueAsString  JSON value
+       * @param type a Java class
+       * @return a value of class {@code Class}
+       * @throws IOException if the conversion is not possible
+       */
+      Object convert(String valueAsString, Class<?> type) throws IOException;
+    }
+
+    /**
+     * Convert a JSON value encoded as a String to an object of peculiar Java class.
+     *
+     * @param valueAsString a JSON value
+     * @param type a Java class
+     * @param downstreamConverter an already defined converted that implement the default conversions
+     * @return a value of class {@code Class}
+     * @throws IOException if the conversion is not possible
+     *
+     * @see DownStream
+     */
+    Object convert(String valueAsString, Class<?> type, DownStream downstreamConverter) throws IOException;
+  }
+
+  /**
+   * Parse a JSON file (as a {@code Reader}) using a record class to guide the decoding.
+   *
+   * @param reader the reader containing the JSON
+   * @param recordType the type of the record to decode
+   * @param <R> the type of the record
+   * @return a newly allocated record
+   * @throws IOException if either an i/o error or a parsing error occur
+   *
+   * @see #parse(Reader, Class, Converter)
+   */
+  static <R extends Record> R parse(Reader reader, Class<? extends R> recordType) throws IOException {
+    return parse(reader, recordType, (valueAsString, type, downstreamConverter) -> downstreamConverter.convert(valueAsString, type));
+  }
+
+  /**
+   * Parse a JSON file (as a {@code Reader}) using a record class to guide the decoding.
+   *
+   * @param reader the reader containing the JSON
+   * @param recordType the type of the record to decode
+   * @param converter a user defined converter to handle user specific conversions
+   * @param <R> the type of the record
+   * @return a newly allocated record
+   * @throws IOException if either an i/o error or a parsing error occur
+   *
+   * @see #parse(Reader, Class)
+   */
+  static <R extends Record> R parse(Reader reader, Class<? extends R> recordType, Converter converter) throws IOException {
+    requireNonNull(reader, "reader is null");
+    requireNonNull(reader, "recordType is null");
+    requireNonNull(reader, "converter is null");
+    return recordType.cast(JSONParsing.parse(reader, recordType, converter));
   }
 }
