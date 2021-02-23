@@ -37,13 +37,13 @@ Some utility classes around java records
 
 - JSONTrait
 
-  Implementing the interface `JSONTrait` adds a method `toJSON` that
+  Implementing the interface `JSONTrait` adds two methods `toJSON` and `toHumanReadableJSON`that
   enable to output a record instance using the JSON format
   ```java
   record Person(String name, int age) implements JSONTrait { }
   ...
   var person = new Person("Bob", 42);
-  System.out.println(person.toJSON());
+  System.out.println(person.toHumanReadableJSON());
   ```
 
 ### How to build
