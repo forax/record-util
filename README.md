@@ -46,7 +46,7 @@ Some utility classes around java records
   System.out.println(person.toHumanReadableJSON());
   ```
   `JSONTrait` also defines a method `parse(reader, recordType)` to decode a JSON file
-  to specific record.
+  to a record instance.
 
 ### How to build
 ```
