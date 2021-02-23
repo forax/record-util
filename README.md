@@ -3,7 +3,7 @@ Some utility classes around java records
 
 ### On the menu
 
-- MapTrait
+- **MapTrait**
   
   Transform any record to a `java.util.Map` just by implementing the interface `MapTrait`
   ```java
@@ -12,7 +12,7 @@ Some utility classes around java records
     Map<String, Object> map = new Person("Bob", 42);
   ```
 
-- WithTrait
+- **WithTrait**
 
   Implementing the interface `WithTrait` adds several methods `with` that allow to duplicate
   a record instance and update several record components in the process
@@ -23,7 +23,7 @@ Some utility classes around java records
   var ana = bob.with("name", "Ana");
   ```
 
-- Wither
+- **Wither**
   
   A very fast but more cumbersome way to duplicate/update a record instance
   ```java
@@ -35,7 +35,7 @@ Some utility classes around java records
   var ana = wither.with(bob, "name", "Ana");
   ```
 
-- JSONTrait
+- **JSONTrait**
 
   Implementing the interface `JSONTrait` adds two methods `toJSON` and `toHumanReadableJSON`that
   enable to output a record instance using the JSON format
