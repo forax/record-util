@@ -45,8 +45,13 @@ Some utility classes around java records
   var person = new Person("Bob", 42);
   System.out.println(person.toHumanReadableJSON());
   ```
+  
   `JSONTrait` also defines a method `parse(reader, recordType)` to decode a JSON file
   to a record instance
+  ```java
+  var reader = ... // a FileReader or a StringReader
+  var person = JSONTrait.parse(reader, Person.class);
+  ```
 
 ### How to build
 ```
