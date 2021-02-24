@@ -21,10 +21,13 @@ import static java.util.Objects.requireNonNull;
  *   System.out.println(person.toJSON());
  * </pre>
  *
- * Moreover, JSONTrait defines a method {@link #parse(Reader, Class)} to decode a JSON file
- * to a record instance. This feature is implemented using Jackson but the dependency is not enabled by default
- * so to use it you have to add a `requires com.fasterxml.jackson.core;` into your module-info
- * and also add the dependency to `com.fasterxml.jackson.core:jackson-core` in your POM file
+ * Moreover, JSONTrait defines two methods to parse a JSON file, {@link #parse(Reader, Class)} to decode
+ * a JSON Object to a record instance and {@link #stream(Reader, Class)} to decode a JSON Array
+ * to a {@link Stream} of record instances.
+ * Both methods are implemented using Jackson but in order to avoid an unnecessary dependency
+ * if those methods are not used , the dependency to Jackson is declared as optional.
+ * So to use these methods, you have to add a `requires com.fasterxml.jackson.core;` into your module-info
+ * and also adds the dependency to `com.fasterxml.jackson.core:jackson-core` in your POM file
  *
  * <p>
  * All methods may throw an error {@link IllegalAccessError} if the record is declared
@@ -234,7 +237,7 @@ public interface JSONTrait {
    * @see #stream(Reader, Class, Converter)
    */
   static <R extends Record> Stream<R> stream(Reader reader, Class<? extends R> recordType) {
-    return JSONParsing.stream(reader, recordType, defaultConverter());
+    return stream(reader, recordType, defaultConverter());
   }
 
   /**
