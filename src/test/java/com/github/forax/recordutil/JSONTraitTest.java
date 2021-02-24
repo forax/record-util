@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.StringReader;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -166,7 +167,7 @@ public class JSONTraitTest {
   @Test
   public void parseEnclosedJSON() throws IOException {
     record Address(int number, String street) {}
-    record Person(String name, int age, Address address) implements JSONTrait {}
+    record Person(String name, int age, Address address) {}
     var person = JSONTrait.parse(new StringReader("""
         {
           "name": "Bob",
@@ -180,5 +181,24 @@ public class JSONTraitTest {
 
     var expected = new Person("Bob", 42, new Address(13, "civic street"));
     assertEquals(expected, person);
+  }
+
+  @Test
+  public void streamArrayOfJSONObject() {
+    record Person(String name, int age) {}
+    var reader = new StringReader("""
+        [
+          { "name": "Bob", "age": 42 },
+          { "name": "Ana", "age": 27 }
+        ]\
+        """);
+
+    List<Person> list;
+    try(var stream = JSONTrait.stream(reader, Person.class)) {
+      list = stream.toList();
+    }
+
+    var expected = List.of(new Person("Bob", 42), new Person("Ana", 27));
+    assertEquals(expected, list);
   }
 }

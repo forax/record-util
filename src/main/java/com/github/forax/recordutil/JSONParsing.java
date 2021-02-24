@@ -6,18 +6,31 @@ import com.fasterxml.jackson.core.JsonToken;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.Spliterator;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 class JSONParsing {
   public static Object parse(Reader reader, Class<?> recordType, JSONTrait.Converter converter) throws IOException {
-    JsonFactory factory;
+    try (var parser = createFactory().createParser(reader)) {
+      if (parser.nextToken() != JsonToken.START_OBJECT) {
+        throw new IOException("invalid start token for a JSON Object" + parser.getText());
+      }
+      return parseRecord(parser, recordType, converter);
+    }
+  }
+
+  private static JsonFactory createFactory() {
     try {
-      factory = new JsonFactory();
+      return new JsonFactory();
     } catch(NoClassDefFoundError error) {
       error.addSuppressed(new ClassNotFoundException("""
           
@@ -27,13 +40,62 @@ class JSONParsing {
           """));
       throw error;
     }
+  }
 
-    try (var parser = factory.createParser(reader)) {
-      if (parser.nextToken() != JsonToken.START_OBJECT) {
-        throw new IOException("invalid start token for a JSON Object" + parser.getText());
+  public static <R extends Record> Stream<R> stream(Reader reader, Class<? extends R> recordType, JSONTrait.Converter converter) {
+    JsonParser _parser = null;
+    try {
+      _parser = createFactory().createParser(reader);
+      if (_parser.nextToken() != JsonToken.START_ARRAY) {
+        throw new UncheckedIOException(new IOException("invalid start token for a JSON Array" + _parser.getText()));
       }
-      return parseRecord(parser, recordType, converter);
+    } catch(IOException e) {
+      try {
+        if (_parser != null) {
+          _parser.close();
+        }
+      } catch(IOException e2) {
+        e.addSuppressed(e2);
+      }
+      throw new UncheckedIOException(e);
     }
+
+    var parser = _parser;
+    var stream = StreamSupport.stream(new Spliterator<R>() {
+      @Override
+      public boolean tryAdvance(Consumer<? super R> action) {
+        try {
+          var token = parser.nextToken();
+          if (token == JsonToken.END_ARRAY) {
+            return false;
+          }
+          var record = recordType.cast(parseRecord(parser, recordType, converter));
+          action.accept(record);
+          return true;
+        } catch(IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      }
+      @Override
+      public Spliterator<R> trySplit() {
+        return null;
+      }
+      @Override
+      public long estimateSize() {
+        return Long.MAX_VALUE;
+      }
+      @Override
+      public int characteristics() {
+        return ORDERED;
+      }
+    }, false);
+    return stream.onClose(() -> {
+      try {
+        parser.close();
+      } catch(IOException e) {
+        // silently ignore it
+      }
+    });
   }
 
   private static Object parseRecord(JsonParser parser, Class<?> recordType, JSONTrait.Converter converter) throws IOException {
@@ -105,7 +167,7 @@ class JSONParsing {
         case "java.lang.String" -> valueAsString;
         case "char", "java.lang.Character" -> {
           if (valueAsString.length() != 1) {
-            throw new IOException("can not convert " + valueAsString + " to a char/java.lang.Character");
+            throw new IOException("can not convert " + valueAsString + " to a char or a java.lang.Character");
           }
           yield valueAsString.charAt(0);
         }

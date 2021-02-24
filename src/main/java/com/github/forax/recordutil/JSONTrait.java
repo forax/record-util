@@ -5,9 +5,7 @@ import java.io.Reader;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -186,8 +184,12 @@ public interface JSONTrait {
     Object convert(String valueAsString, Class<?> type, DownStream downstreamConverter) throws IOException;
   }
 
+  private static Converter defaultConverter() {
+    return (valueAsString, type, downstreamConverter) -> downstreamConverter.convert(valueAsString, type);
+  }
+
   /**
-   * Parse a JSON file (as a {@code Reader}) using a record class to guide the decoding.
+   * Parse a JSON Object using a record class to guide the decoding.
    *
    * @param reader the reader containing the JSON
    * @param recordType the type of the record to decode
@@ -198,11 +200,11 @@ public interface JSONTrait {
    * @see #parse(Reader, Class, Converter)
    */
   static <R extends Record> R parse(Reader reader, Class<? extends R> recordType) throws IOException {
-    return parse(reader, recordType, (valueAsString, type, downstreamConverter) -> downstreamConverter.convert(valueAsString, type));
+    return parse(reader, recordType, defaultConverter());
   }
 
   /**
-   * Parse a JSON file (as a {@code Reader}) using a record class to guide the decoding.
+   * Parse a JSON Object using a record class to guide the decoding.
    *
    * @param reader the reader containing the JSON
    * @param recordType the type of the record to decode
@@ -215,8 +217,42 @@ public interface JSONTrait {
    */
   static <R extends Record> R parse(Reader reader, Class<? extends R> recordType, Converter converter) throws IOException {
     requireNonNull(reader, "reader is null");
-    requireNonNull(reader, "recordType is null");
-    requireNonNull(reader, "converter is null");
+    requireNonNull(recordType, "recordType is null");
+    requireNonNull(converter, "converter is null");
     return recordType.cast(JSONParsing.parse(reader, recordType, converter));
+  }
+
+  /**
+   * Returns a Stream from a JSON Array of Objects using a record class to guide the decoding.
+   *
+   * @param reader the reader containing the JSON
+   * @param recordType the type of the record to decode
+   * @param <R> the type of the record
+   * @return a Stream of records
+   * @throws java.io.UncheckedIOException if either an i/o error or a parsing error occur
+   *
+   * @see #stream(Reader, Class, Converter)
+   */
+  static <R extends Record> Stream<R> stream(Reader reader, Class<? extends R> recordType) {
+    return JSONParsing.stream(reader, recordType, defaultConverter());
+  }
+
+  /**
+   * Returns a Stream from a JSON Array of Objects using a record class to guide the decoding.
+   *
+   * @param reader the reader containing the JSON
+   * @param recordType the type of the record to decode
+   * @param converter a user defined converter to handle user specific conversions
+   * @param <R> the type of the record
+   * @return a Stream of records
+   * @throws java.io.UncheckedIOException if either an i/o error or a parsing error occur
+   *
+   * @see #stream(Reader, Class)
+   */
+  static <R extends Record> Stream<R> stream(Reader reader, Class<? extends R> recordType, Converter converter) {
+    requireNonNull(reader, "reader is null");
+    requireNonNull(recordType, "recordType is null");
+    requireNonNull(converter, "converter is null");
+    return JSONParsing.stream(reader, recordType, converter);
   }
 }
