@@ -155,6 +155,7 @@ public interface JSONTrait {
    * </pre>
    * 
    * @see #parse(Reader, Class, Converter)
+   * @see #stream(Reader, Class, Converter) 
    */
   @FunctionalInterface
   interface Converter {
@@ -178,11 +179,12 @@ public interface JSONTrait {
      *
      * @param valueAsString a JSON value
      * @param type a Java class
-     * @param downstreamConverter an already defined converted that implement the default conversions
+     * @param downstreamConverter an already defined converter that implement the default conversions,
+     *                            for primitive values, String, BigInteger and BigDecimal.
      * @return a value of class {@code Class}
      * @throws IOException if the conversion is not possible
      *
-     * @see DownStream
+     * @see Converter.DownStream
      */
     Object convert(String valueAsString, Class<?> type, DownStream downstreamConverter) throws IOException;
   }
@@ -209,6 +211,9 @@ public interface JSONTrait {
   /**
    * Parse a JSON Object using a record class to guide the decoding.
    *
+   * Primitive types, String, BigInteger, BigDecimal, records, List and Set are handled automatically,
+   * for other types, you have to provide a {@link Converter} that recognize those types.
+   *
    * @param reader the reader containing the JSON
    * @param recordType the type of the record to decode
    * @param converter a user defined converter to handle user specific conversions
@@ -217,6 +222,7 @@ public interface JSONTrait {
    * @throws IOException if either an i/o error or a parsing error occur
    *
    * @see #parse(Reader, Class)
+   * @see Converter
    */
   static <R extends Record> R parse(Reader reader, Class<? extends R> recordType, Converter converter) throws IOException {
     requireNonNull(reader, "reader is null");
@@ -243,6 +249,9 @@ public interface JSONTrait {
   /**
    * Returns a Stream from a JSON Array of Objects using a record class to guide the decoding.
    *
+   * Primitive types, String, BigInteger, BigDecimal, records, List and Set are handled automatically,
+   * for other types, you have to provide a {@link Converter} that recognize those types.
+   *
    * @param reader the reader containing the JSON
    * @param recordType the type of the record to decode
    * @param converter a user defined converter to handle user specific conversions
@@ -251,6 +260,7 @@ public interface JSONTrait {
    * @throws java.io.UncheckedIOException if either an i/o error or a parsing error occur
    *
    * @see #stream(Reader, Class)
+   * @see Converter
    */
   static <R extends Record> Stream<R> stream(Reader reader, Class<? extends R> recordType, Converter converter) {
     requireNonNull(reader, "reader is null");
